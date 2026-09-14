@@ -167,9 +167,21 @@ class RasterScanProps(Dataclass):
     affine: t.Annotated[NDArray[numpy.floating], annotations.shape((2, 2))] | None = None
 
 
+class CustomScanProps(Dataclass):
+    path: Path
+    """Path to a .npy file containing the scan positions, shape (ny, nx, 2) of (y, x) pairs."""
+    scale: float | None = None
+    """Scale factor to multiply the loaded positions by. Use the step size (A) when
+    positions are given in units of scan steps; leave unset if already in A."""
+    remove_offset: bool = True
+    """Subtract the mean position so the scan is centered on the origin, removing any
+    arbitrary global offset."""
+
+
 class ScanHook(Hook[ScanHookArgs, 'ScanState']):
     known: t.ClassVar = {
         'raster': ('phaser.hooks.scan:raster_scan', RasterScanProps),
+        'custom': ('phaser.hooks.scan:custom_scan', CustomScanProps),
     }
 
 

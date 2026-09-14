@@ -1,5 +1,6 @@
 
 import logging
+from pathlib import Path
 
 import numpy
 from frozendict import frozendict
@@ -8,7 +9,7 @@ from phaser.state import ScanState
 from phaser.utils.num import cast_array_module
 from phaser.utils.scan import make_raster_scan
 
-from . import RasterScanProps, ScanHookArgs
+from . import RasterScanProps, CustomScanProps, ScanHookArgs
 
 
 def raster_scan(args: ScanHookArgs, props: RasterScanProps) -> ScanState:
@@ -44,5 +45,42 @@ def raster_scan(args: ScanHookArgs, props: RasterScanProps) -> ScanState:
             type='raster',
             raster_rows=tuple(map(tuple, ii.tolist())),
             raster_cols=tuple(map(tuple, jj.tolist())),
+        )
+    )
+
+
+def custom_scan(args: ScanHookArgs, props: CustomScanProps) -> ScanState:
+    """
+    Load scan positions from a .npy file.
+
+    The loaded array must have shape (ny, nx, 2), with the last dimension
+    corresponding to (y, x) position pairs.
+    """
+    xp = cast_array_module(args['xp'])
+    logger = logging.getLogger(__name__)
+
+    path = Path(props.path).expanduser()
+    if not path.exists():
+        raise FileNotFoundError(f"Custom scan positions file not found: {path}")
+
+    pts = numpy.load(path)
+
+    if pts.ndim != 3 or pts.shape[-1] != 2:
+        raise ValueError(f"Custom scan positions must have shape (ny, nx, 2), got {pts.shape}")
+
+    if props.remove_offset:
+        pts = pts - pts.mean(axis=(0, 1), keepdims=True)
+    if props.scale is not None:
+        pts = pts * props.scale
+
+    logger.info(f"Making custom scan, shape {pts.shape[:-1]},"
+                f" offset removed {props.remove_offset},"
+                f" scale {props.scale}")
+
+    scan = xp.asarray(pts, dtype=args['dtype'])
+
+    return ScanState(
+        scan, xp.asarray(scan, copy=True), tilt=None, meta=frozendict(
+            type='custom',
         )
     )
