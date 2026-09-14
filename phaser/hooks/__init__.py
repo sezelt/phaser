@@ -45,6 +45,27 @@ class LoadEmpadProps(Dataclass):
     det_flips: tuple[bool, bool, bool] | None = None
 
 
+class LoadScanomaticProps(Dataclass):
+    path: Path
+
+    diff_step: float | None = None
+    """Diffraction pixel size [mrad]. Overrides value from EMD metadata."""
+    kv: float | None = None
+    """Accelerating voltage [kV]. Overrides value from EMD metadata (in volts)."""
+    adu: float | None = None
+    """Detector ADU, representing the single-particle signal. Used to scale patterns.
+    Defaults to the 'ADU per electron' value from the EMD metadata, or 12.11 per kV
+    of accelerating voltage if that is not present."""
+    det_flips: tuple[bool, bool, bool] | None = None
+    """Detector flips (flip_y, flip_x, transpose). Defaults to typical EMPAD orientation."""
+    conv_angle: float | None = None
+    """Probe semiconvergence angle [mrad]. Overrides value from EMD metadata."""
+    step_size: float | None = None
+    """Scan step size [A]. Overrides value from EMD metadata."""
+    scan_rotation: float | None = None
+    """Scan rotation [degrees CCW]. Overrides value from EMD metadata."""
+
+
 class LoadGatanProps(Dataclass):
     path: Path
     
@@ -90,6 +111,7 @@ class RawDataHook(Hook[None, RawData]):
         'gatan': ('phaser.hooks.io.gatan:load_gatan', LoadGatanProps, ('rsciio',)),
         'nion': ('phaser.hooks.io.nion:load_nion', LoadNionProps),
         'manual': ('phaser.hooks.io.manual:load_manual', LoadManualProps),
+        'scanomatic': ('phaser.hooks.io.scanomatic:load_scanomatic', LoadScanomaticProps),
     }
 
 
