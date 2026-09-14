@@ -11,6 +11,7 @@ nav:
   - 'Using phaser':
     - using/starting.md
     - using/plan.md
+    - hooks.md
     - using/algorithms.md
     - using/conventions.md
   - API:
