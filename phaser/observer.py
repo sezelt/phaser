@@ -255,11 +255,6 @@ class SaveObserver(Observer):
         self, init_state: ReconsState, *, recons_name: str,
         plan: EnginePlan, **kwargs: t.Any
     ):
-        self.save_flag = process_flag(plan.save)
-        self.save_images_flag = process_flag(plan.save_images)
-        self.save_options = plan.save_options
-        self.any_state_output = flag_any_true(self.save_flag, plan.niter)
-        self.any_image_output = flag_any_true(self.save_images_flag, plan.niter)
         engine_num = init_state.iter.engine_num
 
         try:
@@ -275,8 +270,16 @@ class SaveObserver(Observer):
         except Exception as e:
             raise ValueError("Invalid format string in 'out_dir'") from e
 
+        # close the previous engine's output dir before updating the per-engine flags, so
+        # close() finalizes the old dir using the old engine's save state (not the new one's)
         if self.out_dir is not None and self.out_dir != out_dir:
-            self.close()  # close out_dir from previous engine
+            self.close()
+
+        self.save_flag = process_flag(plan.save)
+        self.save_images_flag = process_flag(plan.save_images)
+        self.save_options = plan.save_options
+        self.any_state_output = flag_any_true(self.save_flag, plan.niter)
+        self.any_image_output = flag_any_true(self.save_images_flag, plan.niter)
         self.out_dir = out_dir
 
         if self.any_state_output or self.any_image_output:
