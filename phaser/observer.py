@@ -2,6 +2,7 @@ import contextlib
 from functools import wraps
 import logging
 from pathlib import Path
+import shutil
 import time
 import typing as t
 
@@ -210,7 +211,7 @@ class PatienceObserver(Observer):
 
 
 class SaveObserver(Observer):
-    def __init__(self):
+    def __init__(self, source: t.Optional[t.Union[str, Path]] = None):
         self.out_dir: t.Optional[Path] = None
         self.save_options: t.Optional[SaveOptions] = None
 
@@ -218,6 +219,37 @@ class SaveObserver(Observer):
         self.save_images_flag: t.Optional[t.Callable[['FlagArgs'], bool]] = None
         self.any_state_output: bool = False
         self.any_image_output: bool = False
+
+        self.plan: t.Optional[ReconsPlan] = None
+        self.source: t.Optional[Path] = Path(source) if source is not None else None
+        self._plan_artifact_written: bool = False
+
+    def init_recons(self, plan: ReconsPlan):
+        self.plan = plan
+        self._plan_artifact_written = False
+
+    def _write_plan_artifacts(self):
+        """Write a human-readable record of the reconstruction settings into out_dir."""
+        assert self.out_dir is not None
+        dump_path = self.out_dir / 'plan.yaml'
+
+        # verbatim copy of the source file (preserves comments), when one was provided
+        if self.source is not None and self.source.exists():
+            copy_path = self.out_dir / self.source.name
+            if self.source.resolve() != copy_path.resolve():
+                try:
+                    shutil.copy2(self.source, copy_path)
+                except Exception as e:
+                    logging.warning(f"Failed to copy source plan '{self.source}' into output dir: {e}")
+
+        # normalized dump of the plan; skip if it would collide with the copied source file
+        if self.plan is not None and (
+            self.source is None or self.source.name != dump_path.name
+        ):
+            try:
+                self.plan.write_yaml(dump_path)
+            except Exception as e:
+                logging.warning(f"Failed to write plan dump to '{dump_path}': {e}")
 
     def init_engine(
         self, init_state: ReconsState, *, recons_name: str,
@@ -256,6 +288,12 @@ class SaveObserver(Observer):
                 raise
 
             (self.out_dir / 'finished').unlink(missing_ok=True)
+
+            # write the plan record once per reconstruction, at the first engine whose
+            # output dir is actually created (i.e. the earliest point we know where to put it)
+            if not self._plan_artifact_written:
+                self._write_plan_artifacts()
+                self._plan_artifact_written = True
 
     def update_iteration(self, state: ReconsState, i: int, n: int, errors: t.Dict[str, float]):
         from phaser.engines.common.output import output_images, output_state

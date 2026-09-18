@@ -23,7 +23,7 @@ def run(path: t.Union[str, Path], *, raise_on_warn: bool = False):
     plans = ReconsPlan.from_yaml_all(path)
 
     for plan in plans:
-        execute_plan(plan)
+        execute_plan(plan, source=path)
 
 
 @cli.command('serve')

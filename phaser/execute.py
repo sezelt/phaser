@@ -2,6 +2,7 @@ import dataclasses
 import itertools
 import logging
 import math
+from pathlib import Path
 import sys
 import typing as t
 
@@ -23,6 +24,7 @@ from .version import version_info
 def execute_plan(
     plan: ReconsPlan, *, xp: t.Any = None, seed: t.Any = None,
     name: t.Optional[str] = None,
+    source: t.Optional[t.Union[str, Path]] = None,
     init_state: t.Union[ReconsState, PartialReconsState, None] = None,
     observers: t.Union[Observer, t.Iterable[Observer], None] = None,
     override_observers: t.Union[Observer, t.Iterable[Observer], None] = None,
@@ -31,7 +33,7 @@ def execute_plan(
     logging.info(str(version_info()))
 
     recons = initialize_reconstruction(
-        plan, xp=xp, seed=seed, name=name, init_state=init_state,
+        plan, xp=xp, seed=seed, name=name, source=source, init_state=init_state,
         observers=observers, override_observers=override_observers
     )
     recons.state.iter.n_total_iters = sum(
@@ -102,6 +104,7 @@ def execute_engine(
 def _normalize_observers(
     observers: t.Union[Observer, t.Iterable[Observer], None],
     override_observers: t.Union[Observer, t.Iterable[Observer], None],
+    *, source: t.Optional[t.Union[str, Path]] = None,
 ) -> ObserverSet:
     if override_observers is not None:
         if observers is not None:
@@ -116,7 +119,7 @@ def _normalize_observers(
         return ObserverSet(obs)
 
     obs = [
-        SaveObserver(),
+        SaveObserver(source=source),
         LoggingObserver(),
     ]
 
@@ -242,6 +245,7 @@ def load_raw_data(
 def initialize_reconstruction(
     plan: ReconsPlan, *, xp: t.Any = None, device: t.Optional[Device] = None,
     seed: t.Any = None, name: t.Optional[str] = None,
+    source: t.Optional[t.Union[str, Path]] = None,
     init_state: t.Union[ReconsState, PartialReconsState, None] = None,
     observers: t.Union[Observer, t.Iterable[Observer], None] = None,
     override_observers: t.Union[Observer, t.Iterable[Observer], None] = None,
@@ -268,7 +272,7 @@ def initialize_reconstruction(
 
     set_default_device(device, xp)
 
-    observer = _normalize_observers(observers, override_observers)
+    observer = _normalize_observers(observers, override_observers, source=source)
 
     logging.info("Executing plan...")
     observer.init_recons(plan)

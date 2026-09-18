@@ -104,7 +104,7 @@ def run(path: t.Union[str, Path]):
     plans = ReconsPlan.from_yaml_all(path)
 
     for plan in plans:
-        execute_plan(plan)
+        execute_plan(plan, source=path)
 
 
 @click.command()
