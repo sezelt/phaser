@@ -339,6 +339,17 @@ Initializes a focused (single-mode) probe.
 | `conv_angle` | float (mrad) | `None` | Convergence (semiconvergence) angle. |
 | `aberrations` | list of [aberrations](#aberrations) | `[]` | CTF aberrations to apply to the probe. |
 
+### Probe: `cyclomatic`
+
+Initializes the probe from the aberrations fitted and exported by Cyclomatic.
+
+The probe is built from the `C{n,m}` aberration pairs stored in the file's `/aberrations` group (see [`Scan: cyclomatic`](#scan-cyclomatic) for the shared file). `C1,0` acts as the defocus, so no separate defocus is applied. The `/aberrations` group is optional — if absent, an aberration-free probe is built and a warning is logged.
+
+| Argument | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `path` | str | **required** | Path to a Cyclomatic scan-positions `.h5` file (same file as the `cyclomatic` scan). |
+| `conv_angle` | float (mrad) | **required** | Convergence (semiconvergence) angle. Not stored in the file, so it must be given here. |
+
 ### Object: `random`
 
 Initializes the object with small random values.
@@ -366,6 +377,18 @@ Loads user-defined scan positions.
 | --- | --- | --- | --- |
 | `path` | str | **required** | Path to a `.npy` file containing a `(ny, nx, 2)` array of (y, x) positions. |
 | `scale` | float | `None` | Scale factor to multiply the positions by. Use the step size (Å) when positions are given in units of scan steps. |
+| `remove_offset` | bool | `True` | Subtract the mean position so the scan is centered on the origin, removing any arbitrary global offset. |
+
+### Scan: `cyclomatic`
+
+Loads corrected scan positions from a Cyclomatic export.
+
+The scan is built from the `/positions` dataset (shape `(Nx, Ny, 2)`, last axis `(x, y)`, in Å), which is reoriented to phaser's convention — `(ny, nx, 2)` with last axis `(y, x)` — before being used as the scan. This is the same file used by [`Probe: cyclomatic`](#probe-cyclomatic); point both `init.probe.path` and `init.scan.path` at it.
+
+| Argument | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `path` | str | **required** | Path to a Cyclomatic scan-positions `.h5` file (same file as the `cyclomatic` probe). |
+| `scale` | float | `None` | Scale factor to multiply the loaded positions by. The file's positions are in Å, so leave unset unless a further scaling is needed. |
 | `remove_offset` | bool | `True` | Subtract the mean position so the scan is centered on the origin, removing any arbitrary global offset. |
 
 ### Tilt: `global`

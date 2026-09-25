@@ -129,9 +129,18 @@ class FocusedProbeProps(Dataclass):
     aberrations: t.Sequence[Aberration] = ()
 
 
+class CyclomaticProbeProps(Dataclass):
+    path: Path
+    """Path to a Cyclomatic scan-positions .h5 file (root attr format == 'cyclomatic-scan-positions').
+    The probe is built from the fitted aberrations in the file's /aberrations group."""
+    conv_angle: float
+    """Semiconvergence angle [mrad]. Not stored in the file, so required. Sets the probe aperture."""
+
+
 class ProbeHook(Hook[ProbeHookArgs, 'ProbeState']):
     known: t.ClassVar = {
         'focused': ('phaser.hooks.probe:focused_probe', FocusedProbeProps),
+        'cyclomatic': ('phaser.hooks.cyclomatic:cyclomatic_probe', CyclomaticProbeProps),
     }
 
 
@@ -178,10 +187,23 @@ class CustomScanProps(Dataclass):
     arbitrary global offset."""
 
 
+class CyclomaticScanProps(Dataclass):
+    path: Path
+    """Path to a Cyclomatic scan-positions .h5 file (root attr format == 'cyclomatic-scan-positions').
+    The corrected positions in the file's /positions dataset are used as the scan."""
+    remove_offset: bool = True
+    """Subtract the mean position so the scan is centered on the origin, removing any
+    arbitrary global offset."""
+    scale: float | None = None
+    """Scale factor to multiply the loaded positions by. The file's positions are in A,
+    so leave unset unless a further scaling is needed."""
+
+
 class ScanHook(Hook[ScanHookArgs, 'ScanState']):
     known: t.ClassVar = {
         'raster': ('phaser.hooks.scan:raster_scan', RasterScanProps),
         'custom': ('phaser.hooks.scan:custom_scan', CustomScanProps),
+        'cyclomatic': ('phaser.hooks.cyclomatic:cyclomatic_scan', CyclomaticScanProps),
     }
 
 
