@@ -308,6 +308,19 @@ Offsets pattern intensities.
 | --- | --- | --- | --- |
 | `offset` | float | **required** | Additive value. |
 
+### `threshold`
+
+Replaces pattern values below a threshold, e.g. to zero out the detector background.
+
+Note that this is applied to the raw patterns *after* the ADU scaling performed by the
+raw-data loader hooks (e.g. `empad`, `manual`), so `threshold` and `replace` are in the
+same units as the ADU-scaled pattern intensities — not raw detector counts.
+
+| Argument | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `threshold` | float | **required** | Values strictly below this are replaced. |
+| `replace` | float | `0.0` | Value to assign to sub-threshold pixels (0.0 zeroes them out). |
+
 ### `bin`
 
 Bins (downsamples) the patterns by averaging.

@@ -247,6 +247,14 @@ class ScaleProps(Dataclass):
 class OffsetProps(Dataclass):
     offset: float
 
+class ThresholdProps(Dataclass):
+    threshold: float
+    """Values in the patterns strictly below this are replaced. Applied after the ADU
+    scaling done by the raw-data loader hooks, so this is in the same units as the
+    (ADU-scaled) pattern intensities, not raw detector counts."""
+    replace: float = 0.0
+    """Value to assign to sub-threshold pixels (0.0 zeroes them out)."""
+
 class BinProps(Dataclass):
     bin: int
 
@@ -285,6 +293,7 @@ class PostLoadHook(Hook[RawData, RawData]):
         'poisson': ('phaser.hooks.preprocessing:add_poisson_noise', PoissonProps),
         'scale': ('phaser.hooks.preprocessing:scale_patterns', ScaleProps),
         'offset': ('phaser.hooks.preprocessing:offset_patterns', OffsetProps),
+        'threshold': ('phaser.hooks.preprocessing:threshold_patterns', ThresholdProps),
         'bin': ('phaser.hooks.preprocessing:bin_patterns', BinProps),
         'apply_mtf': ('phaser.hooks.preprocessing:apply_mtf', ApplyMtfProps),
     }

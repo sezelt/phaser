@@ -25,6 +25,7 @@ from . import (
     PostInitArgs,
     RawData,
     ScaleProps,
+    ThresholdProps,
 )
 
 logger = logging.getLogger(__name__)
@@ -54,6 +55,17 @@ def scale_patterns(raw_data: RawData, props: ScaleProps) -> RawData:
 
 def offset_patterns(raw_data: RawData, props: OffsetProps) -> RawData:
     raw_data['patterns'] -= props.offset
+    return raw_data
+
+def threshold_patterns(raw_data: RawData, props: ThresholdProps) -> RawData:
+    patterns = raw_data['patterns']
+    xp = get_array_module(patterns)
+
+    below = patterns < props.threshold
+    logger.info(f"Thresholding raw patterns: {int(xp.sum(below))} pixels below "
+                f"{props.threshold} set to {props.replace}")
+
+    raw_data['patterns'] = xp.where(below, props.replace, patterns)
     return raw_data
 
 def bin_patterns(raw_data: RawData, props: BinProps) -> RawData:
