@@ -41,6 +41,8 @@ SaveType: t.TypeAlias = t.Literal[
     'scan', 'tilt',
 ]
 
+ImgDtype: t.TypeAlias = t.Literal['float', '8bit', '16bit', '32bit']
+
 
 class InitPlan(Dataclass, kw_only=True):
     state: t.Optional[Path] = None
@@ -55,7 +57,12 @@ class SaveOptions(Dataclass, kw_only=True):
     images: t.Tuple[SaveType, ...] = ('probe', 'object_phase_stack')
     crop_roi: bool = True
     unwrap_phase: bool = False
-    img_dtype: t.Literal['float', '8bit', '16bit', '32bit'] = '16bit'
+    img_dtype: t.Union[ImgDtype, t.Dict[SaveType, ImgDtype]] = '16bit'
+    """Dtype to store images at. Either a single dtype applied to all
+    images, or a per-image map of save type to dtype (e.g. save 'probe'
+    as '8bit' but 'object_phase_stack' as '32bit'); types not present in
+    the map fall back to `'16bit'`. Floating point images are stored
+    unscaled, other images are scaled to saturation."""
 
     plot_ext: str = "svg"
     """Extension to use for matplotlib savefig"""
@@ -64,6 +71,14 @@ class SaveOptions(Dataclass, kw_only=True):
     out_dir: str = "{name}"
     img_fmt: str = "{type}_iter{iter.total_iter:03}.{ext}"
     hdf5_fmt: str = "iter{iter.total_iter:03}.h5"
+
+    def img_dtype_for(self, image_type: SaveType) -> ImgDtype:
+        """The dtype to use when saving an image of the given type: a per-image
+        dtype if `img_dtype` is a map, otherwise `img_dtype` itself. Types not
+        present in the map fall back to `'16bit'`."""
+        if isinstance(self.img_dtype, dict):
+            return self.img_dtype.get(image_type, '16bit')
+        return self.img_dtype
 
 
 class MtfPlan(Dataclass, kw_only=True):

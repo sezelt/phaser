@@ -527,7 +527,7 @@ Fields shared by both engines:
 | `images` | list of save types | `['probe', 'object_phase_stack']` | See [save types](#save-types). |
 | `crop_roi` | bool | `True` | Crop saved images to the ROI. |
 | `unwrap_phase` | bool | `False` | Save unwrapped object phase. |
-| `img_dtype` | `'float' \| '8bit' \| '16bit' \| '32bit'` | `'16bit'` | |
+| `img_dtype` | `'float' \| '8bit' \| '16bit' \| '32bit'`, or map of save type → dtype | `'16bit'` | Dtype to store images at, either for all images or per image type (unlisted types default to `'16bit'`). Floating point images are stored unscaled; others are scaled to saturation. |
 | `plot_ext` | str | `'svg'` | Extension for matplotlib figures. |
 | `plot_dpi` | int | `300` | |
 | `out_dir` | str | `'{name}'` | Output directory (format string). |

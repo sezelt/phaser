@@ -98,8 +98,13 @@ save_options:
   # (optional) whether to phase unwrap phase images
   unwrap_phase: True
   # (optional) Datatype to store images at. Floating point images
-  # are stored unscaled, other images are scaled to saturation
+  # are stored unscaled, other images are scaled to saturation.
+  # Either a single dtype applied to all images, or a per-image map
+  # of image type to dtype (types not listed default to 16bit)
   img_dtype: 16bit  # float, 8bit, 16bit, or 32bit
+  #img_dtype:
+  #  probe: 8bit
+  #  object_phase_stack: 32bit
 
   # (optional) Python format strings controlling the name of
   # HDF5 and image outputs.

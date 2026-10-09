@@ -10,7 +10,7 @@ from phaser.utils.num import to_numpy, abs2, fft2, get_array_module
 from phaser.utils.image import remove_linear_ramp, colorize_complex, scale_to_integral_type
 from phaser.utils.io import tiff_write_opts, tiff_write_opts_recip
 from phaser.state import ReconsState
-from phaser.plan import SaveOptions
+from phaser.plan import ImgDtype, SaveOptions
 
 
 def output_images(state: ReconsState, out_dir: Path, options: SaveOptions):
@@ -29,7 +29,10 @@ def output_images(state: ReconsState, out_dir: Path, options: SaveOptions):
         except Exception as e:
             raise ValueError("Invalid format string in 'img_fmt'") from e
 
-        _SAVE_FUNCS[ty](state, out_path, options)
+        if ty in _PLOT_FUNCS:
+            _SAVE_FUNCS[ty](state, out_path, options)
+        else:
+            _SAVE_FUNCS[ty](state, out_path, options, dtype=options.img_dtype_for(ty))
 
 
 def output_state(state: ReconsState, out_dir: Path, options: SaveOptions):
@@ -45,11 +48,11 @@ def output_state(state: ReconsState, out_dir: Path, options: SaveOptions):
     state.write_hdf5(out_dir / out_name)
 
 
-def _save_probe(state: ReconsState, out_path: Path, options: SaveOptions):
+def _save_probe(state: ReconsState, out_path: Path, options: SaveOptions, dtype: ImgDtype):
     probe = to_numpy(state.probe.data)
     write_opts = tiff_write_opts(state.probe.sampling, n_slices=probe.shape[0])
 
-    if options.img_dtype == 'float':
+    if dtype == 'float':
         # save complex image
         with tifffile.TiffWriter(out_path, ome=True) as w:
             write_opts['metadata']['axes'] = 'CYX'
@@ -57,31 +60,31 @@ def _save_probe(state: ReconsState, out_path: Path, options: SaveOptions):
         return
 
     img = scale_to_integral_type(
-        colorize_complex(probe), options.img_dtype
+        colorize_complex(probe), dtype
     )
     with tifffile.TiffWriter(out_path, ome=True) as w:
         write_opts['metadata']['axes'] = 'CYXS'
         w.write(img, photometric='rgb', **write_opts)
 
 
-def _save_probe_mag(state: ReconsState, out_path: Path, options: SaveOptions):
+def _save_probe_mag(state: ReconsState, out_path: Path, options: SaveOptions, dtype: ImgDtype):
     probe_mag = abs2(state.probe.data)
     write_opts = tiff_write_opts(state.probe.sampling, n_slices=probe_mag.shape[0])
 
-    if options.img_dtype != 'float':
-        probe_mag = scale_to_integral_type(to_numpy(probe_mag), options.img_dtype, min_range=0.2)
+    if dtype != 'float':
+        probe_mag = scale_to_integral_type(to_numpy(probe_mag), dtype, min_range=0.2)
 
     with tifffile.TiffWriter(out_path, ome=True) as w:
         write_opts['metadata']['axes'] = 'CYX'
         w.write(to_numpy(probe_mag), **write_opts)
 
 
-def _save_probe_recip(state: ReconsState, out_path: Path, options: SaveOptions):
+def _save_probe_recip(state: ReconsState, out_path: Path, options: SaveOptions, dtype: ImgDtype):
     xp = get_array_module(state.probe.data)
     probe = to_numpy(xp.fft.fftshift(fft2(state.probe.data), axes=(-1, -2)))
     write_opts = tiff_write_opts_recip(state.probe.sampling, n_slices=probe.shape[0])
 
-    if options.img_dtype == 'float':
+    if dtype == 'float':
         # save complex image
         with tifffile.TiffWriter(out_path, ome=True) as w:
             write_opts['metadata']['axes'] = 'CYX'
@@ -89,27 +92,27 @@ def _save_probe_recip(state: ReconsState, out_path: Path, options: SaveOptions):
         return
 
     img = scale_to_integral_type(
-        colorize_complex(probe), options.img_dtype
+        colorize_complex(probe), dtype
     )
     with tifffile.TiffWriter(out_path, ome=True) as w:
         write_opts['metadata']['axes'] = 'CYXS'
         w.write(img, photometric='rgb', **write_opts)
 
 
-def _save_probe_recip_mag(state: ReconsState, out_path: Path, options: SaveOptions):
+def _save_probe_recip_mag(state: ReconsState, out_path: Path, options: SaveOptions, dtype: ImgDtype):
     xp = get_array_module(state.probe.data)
     probe_mag = to_numpy(abs2(xp.fft.fftshift(fft2(state.probe.data), axes=(-1, -2))))
     write_opts = tiff_write_opts_recip(state.probe.sampling, n_slices=probe_mag.shape[0])
 
-    if options.img_dtype != 'float':
-        probe_mag = scale_to_integral_type(probe_mag, options.img_dtype, min_range=0.2)
+    if dtype != 'float':
+        probe_mag = scale_to_integral_type(probe_mag, dtype, min_range=0.2)
 
     with tifffile.TiffWriter(out_path, ome=True) as w:
         write_opts['metadata']['axes'] = 'CYX'
         w.write(probe_mag, **write_opts)
 
 
-def _save_object_phase(state: ReconsState, out_path: Path, options: SaveOptions, stack: bool = False):
+def _save_object_phase(state: ReconsState, out_path: Path, options: SaveOptions, dtype: ImgDtype, stack: bool = False):
     crop = options.crop_roi
 
     xp = get_array_module(state.object.data)
@@ -138,15 +141,15 @@ def _save_object_phase(state: ReconsState, out_path: Path, options: SaveOptions,
     mask = to_numpy(mask)
     obj_phase = remove_linear_ramp(to_numpy(obj_phase), mask)
 
-    if options.img_dtype != 'float':
-        obj_phase = scale_to_integral_type(obj_phase, options.img_dtype, mask)
+    if dtype != 'float':
+        obj_phase = scale_to_integral_type(obj_phase, dtype, mask)
 
     with tifffile.TiffWriter(out_path, ome=True) as w:
         write_opts['metadata']['axes'] = 'ZYX' if stack else 'YX'
         w.write(obj_phase, **write_opts)
 
 
-def _save_object_mag(state: ReconsState, out_path: Path, options: SaveOptions, stack: bool = False):
+def _save_object_mag(state: ReconsState, out_path: Path, options: SaveOptions, dtype: ImgDtype, stack: bool = False):
     crop = options.crop_roi
 
     obj_sampling = state.object.sampling
@@ -169,8 +172,8 @@ def _save_object_mag(state: ReconsState, out_path: Path, options: SaveOptions, s
         obj_mag = xp.prod(obj_mag, axis=0)
 
     obj_mag = to_numpy(obj_mag)
-    if options.img_dtype != 'float':
-        obj_mag = scale_to_integral_type(obj_mag, options.img_dtype, mask, min_range=0.2)
+    if dtype != 'float':
+        obj_mag = scale_to_integral_type(obj_mag, dtype, mask, min_range=0.2)
 
     with tifffile.TiffWriter(out_path, ome=True) as w:
         write_opts['metadata']['axes'] = 'ZYX' if stack else 'YX'
@@ -237,7 +240,7 @@ def _plot_tilt(state: ReconsState, out_path: Path, options: SaveOptions):
     pyplot.close(fig)
 
 
-_SAVE_FUNCS: t.Dict[str, t.Callable[[ReconsState, Path, SaveOptions], t.Any]] = {
+_SAVE_FUNCS: t.Dict[str, t.Callable[..., t.Any]] = {
     'probe': _save_probe,
     'probe_mag': _save_probe_mag,
     'probe_recip': _save_probe_recip,
