@@ -69,17 +69,27 @@ def threshold_patterns(raw_data: RawData, props: ThresholdProps) -> RawData:
     return raw_data
 
 def bin_patterns(raw_data: RawData, props: BinProps) -> RawData:
-    #xp = get_array_module(raw_data['patterns'])
     bin_factor = props.bin
     patterns = raw_data['patterns']
     Ny, Nx = patterns.shape[-2:]
+
+    mask = raw_data['mask']
+    logger.info(f"Binning raw patterns by {bin_factor}, shape "
+                f"{patterns.shape[-2:]} -> ({Ny // bin_factor}, {Nx // bin_factor})")
     patterns = patterns.reshape(*patterns.shape[:-2],
                        Ny // bin_factor, bin_factor,
                        Nx // bin_factor, bin_factor).sum(axis=(-1, -3))
+    mask = mask.reshape(*mask.shape[:-2],
+                        Ny // bin_factor, bin_factor,
+                        Nx // bin_factor, bin_factor).sum(axis=(-1, -3))
 
-    print(patterns.shape)  # (120, 45, 128, 128)
-    
     raw_data['patterns'] = patterns
+    raw_data['mask'] = mask
+    # binned pixels are `bin_factor`x larger, so keep the same extent
+    # (and thus pixel size scales by `bin_factor`)
+    raw_data['sampling'] = Sampling(
+        (Ny // bin_factor, Nx // bin_factor), extent=tuple(raw_data['sampling'].extent)
+    )
     return raw_data
 
 
