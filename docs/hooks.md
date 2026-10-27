@@ -679,12 +679,8 @@ Hooks in an engine's `group_constraints` list, applied between groups. The
 supported hooks are a subset of the iteration constraints:
 
 `clamp_object_amplitude`, `limit_probe_support`, `obj_low_pass`,
-`obj_gaussian`, `remove_phase_ramp`, `nonneg_object_phase`,
-`limit_position_step` (same arguments as above).
-
-Note: probe positions are updated at the iteration level in both engines, so
-`limit_position_step` belongs in `iter_constraints` (listing it in
-`group_constraints` is a no-op for positions).
+`obj_gaussian`, `remove_phase_ramp`, `nonneg_object_phase`
+(same arguments as above).
 
 ## Cost regularizers
 

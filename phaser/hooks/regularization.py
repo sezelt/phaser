@@ -102,7 +102,6 @@ class GroupConstraintHook(Hook[None, GroupConstraint]):
         'obj_gaussian': ('phaser.engines.common.regularizers:ObjGaussian', GaussianProps),
         'remove_phase_ramp': ('phaser.engines.common.regularizers:RemovePhaseRamp', t.Dict[str, t.Any]),
         'nonneg_object_phase': ('phaser.engines.common.regularizers:NonNegObjectPhase', NonNegObjectPhaseProps),
-        'limit_position_step': ('phaser.engines.common.regularizers:LimitPositionStep', LimitPositionStepProps),
 
     }
 

@@ -142,9 +142,6 @@ class LimitPositionStep:
         xp = get_array_module(sim.scan.data)
         return xp.array(sim.scan.data, copy=True)
 
-    def apply_group(self, group: NDArray[numpy.integer], sim: ReconsState, state: NDArray[numpy.floating]) -> t.Tuple[ReconsState, NDArray[numpy.floating]]:
-        return self.apply_iter(sim, state)
-
     def apply_iter(self, sim: ReconsState, state: NDArray[numpy.floating]) -> t.Tuple[ReconsState, NDArray[numpy.floating]]:
         # clamp the per-update position displacement to `max_step`
         xp = get_array_module(sim.scan.data)
