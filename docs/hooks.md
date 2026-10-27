@@ -671,6 +671,7 @@ iteration.
 | `tilt_gaussian` | `sigma`: float (**required**), `weight`: float (default `0.9`) | Gaussian smoothing of the tilt field. (`attr_path` is fixed to `scan.tilt`.) |
 | `remove_phase_ramp` | free-form dict, passed to the function untyped | Removes the mean phase ramp. |
 | `nonneg_object_phase` | `weight`: float (default `1.0`) | Penalizes negative object phase. |
+| `limit_position_step` | `max_step`: float (Å, **required**) | Limits how far any probe position can move in a single update. Displacements larger than `max_step` are scaled down to it. Useful for taming large position updates (e.g. from a noisy gradient) that can otherwise move positions out of the field of view. |
 
 ## Group constraints
 
@@ -678,8 +679,12 @@ Hooks in an engine's `group_constraints` list, applied between groups. The
 supported hooks are a subset of the iteration constraints:
 
 `clamp_object_amplitude`, `limit_probe_support`, `obj_low_pass`,
-`obj_gaussian`, `remove_phase_ramp`, `nonneg_object_phase` (same arguments as
-above).
+`obj_gaussian`, `remove_phase_ramp`, `nonneg_object_phase`,
+`limit_position_step` (same arguments as above).
+
+Note: probe positions are updated at the iteration level in both engines, so
+`limit_position_step` belongs in `iter_constraints` (listing it in
+`group_constraints` is a no-op for positions).
 
 ## Cost regularizers
 

@@ -74,6 +74,10 @@ class NonNegObjectPhaseProps(Dataclass):
     weight: float = 1.0
 
 
+class LimitPositionStepProps(Dataclass):
+    max_step: float  # maximum probe position movement per update (angstrom)
+
+
 class IterConstraintHook(Hook[None, IterConstraint]):
     known = {
         'clamp_object_amplitude': ('phaser.engines.common.regularizers:ClampObjectAmplitude', ClampObjectAmplitudeProps),
@@ -85,6 +89,7 @@ class IterConstraintHook(Hook[None, IterConstraint]):
         'tilt_gaussian': ('phaser.engines.common.regularizers:UnstructuredGaussian', TiltGaussianProps),
         'remove_phase_ramp': ('phaser.engines.common.regularizers:RemovePhaseRamp', t.Dict[str, t.Any]),
         'nonneg_object_phase': ('phaser.engines.common.regularizers:NonNegObjectPhase', NonNegObjectPhaseProps),
+        'limit_position_step': ('phaser.engines.common.regularizers:LimitPositionStep', LimitPositionStepProps),
 
     }
 
@@ -97,6 +102,7 @@ class GroupConstraintHook(Hook[None, GroupConstraint]):
         'obj_gaussian': ('phaser.engines.common.regularizers:ObjGaussian', GaussianProps),
         'remove_phase_ramp': ('phaser.engines.common.regularizers:RemovePhaseRamp', t.Dict[str, t.Any]),
         'nonneg_object_phase': ('phaser.engines.common.regularizers:NonNegObjectPhase', NonNegObjectPhaseProps),
+        'limit_position_step': ('phaser.engines.common.regularizers:LimitPositionStep', LimitPositionStepProps),
 
     }
 

@@ -14,7 +14,8 @@ from phaser.state import ReconsState
 from phaser.hooks.regularization import (
     ClampObjectAmplitudeProps, LimitProbeSupportProps, NonNegObjectPhaseProps,
     RegularizeLayersProps, ObjLowPassProps, GaussianProps,
-    CostRegularizerProps, TVRegularizerProps, UnstructuredGaussianProps
+    CostRegularizerProps, TVRegularizerProps, UnstructuredGaussianProps,
+    LimitPositionStepProps
 )
 
 
@@ -131,6 +132,28 @@ class NonNegObjectPhase:
     def apply_iter(self, sim: ReconsState, state: None) -> t.Tuple[ReconsState, None]:
         sim.object.data = non_neg_phase(sim.object.data, self.weight)
         return (sim, None)
+
+
+class LimitPositionStep:
+    def __init__(self, args: None, props: LimitPositionStepProps):
+        self.max_step: float = props.max_step
+
+    def init_state(self, sim: ReconsState) -> NDArray[numpy.floating]:
+        xp = get_array_module(sim.scan.data)
+        return xp.array(sim.scan.data, copy=True)
+
+    def apply_group(self, group: NDArray[numpy.integer], sim: ReconsState, state: NDArray[numpy.floating]) -> t.Tuple[ReconsState, NDArray[numpy.floating]]:
+        return self.apply_iter(sim, state)
+
+    def apply_iter(self, sim: ReconsState, state: NDArray[numpy.floating]) -> t.Tuple[ReconsState, NDArray[numpy.floating]]:
+        # clamp the per-update position displacement to `max_step`
+        xp = get_array_module(sim.scan.data)
+        prev = state
+        d = sim.scan.data - prev
+        n = xp.linalg.norm(d, axis=-1, keepdims=True)
+        scale = xp.minimum(1.0, self.max_step / xp.maximum(n, 1.0e-12))
+        sim.scan.data = prev + d * scale
+        return (sim, sim.scan.data)
 
 
 class RegularizeLayers:

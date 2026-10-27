@@ -109,8 +109,6 @@ def run_engine(args: EngineArgs, props: ConventionalEnginePlan) -> ReconsState:
         assert_dtype(sim.state.probe.data, cdtype)
         check_finite(sim.state.object.data, sim.state.probe.data, context=f"NaN or inf encountered, iteration {i}")
 
-        sim = sim.apply_iter_constraints()
-
         if iter_update_positions:
             if not position_solver:
                 raise ValueError("Updating positions with no PositionSolver specified")
@@ -130,6 +128,10 @@ def run_engine(args: EngineArgs, props: ConventionalEnginePlan) -> ReconsState:
 
             progress['pos_update_rms'].iters.append(i + start_i)
             progress['pos_update_rms'].values.append(pos_update_rms)
+
+        # apply after any position update, so position constraints (e.g.
+        # limiting the per-update displacement) see the updated scan
+        sim = sim.apply_iter_constraints()
 
         error = None
         if group_errors is not None and len(group_errors):
