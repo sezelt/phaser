@@ -149,8 +149,11 @@ class LimitPositionStep:
         d = sim.scan.data - prev
         n = xp.linalg.norm(d, axis=-1, keepdims=True)
         scale = xp.minimum(1.0, self.max_step / xp.maximum(n, 1.0e-12))
-        sim.scan.data = prev + d * scale
-        return (sim, sim.scan.data)
+        clamped = prev + d * scale
+        sim.scan.data = clamped
+        # keep the state decoupled from `sim.scan.data`: the engines donate the state
+        # to jitted updates, so an aliased buffer would be invalidated before the next apply
+        return (sim, xp.array(clamped, copy=True))
 
 
 class RegularizeLayers:
